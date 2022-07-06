@@ -12,7 +12,7 @@ class Square extends React.Component {
     }
 
     render() {
-        const squareClassName = this.state.highlight ? 'squareHighlighted' : ''
+        const squareClassName = this.props.highlight ? 'squareHighlighted' : ''
 
         const x = this.props.x
         const y = this.props.y
@@ -32,14 +32,13 @@ class Square extends React.Component {
 
 class Row extends React.Component { 
     render() { 
-        console.log(`Row ${this.props.value}`);
-
         let squares = []
-        for (let x = 0; x < this.props.squares; x++) {
+        for (let squareIndex = 0; squareIndex < this.props.squares.length; squareIndex++) {
             squares.push(<Square
-                key={x.toString()}
-                x={x}
-                y={this.props.y}
+                key={squareIndex.toString()}
+                x={this.props.squares[squareIndex].x}
+                y={this.props.squares[squareIndex].y}
+                highlight={this.props.squares[squareIndex].highlight}
                 clickAction={this.props.clickAction}
                 enterSquare={this.props.enterSquare}
                 leaveSquare={this.props.leaveSquare}
@@ -55,21 +54,15 @@ class Row extends React.Component {
 }
 
 class Board extends React.Component {
-    constructor(props) {
-        super(props);
-
-        //
-        console.log('Board init')
-    }
-
     render() {
         // Rows
         let rows = []
-        for (let y = 0; y < this.props.rowCount; y++) {
+        for (let y = 0; y < this.props.board.length; y++) {
             rows.push(<Row
                 key={y.toString()}
                 y={y}
-                squares={this.props.squareCount}
+                squares={this.props.board[y]}
+                squaresCount={this.props.squareCount}
                 clickAction={this.props.clickAction} 
                 enterSquare={this.props.enterSquare}
                 leaveSquare={this.props.leaveSquare}
@@ -87,9 +80,25 @@ class Board extends React.Component {
 class Game extends React.Component {
     constructor(props) {
         super(props);
+
+        let board = [];
+        for (let ri = 0; ri < props.rowCount; ri++) {
+            const row = [];
+            for (let si = 0; si < props.squareCount; si++) {
+                row.push({
+                    x: ri,
+                    y: si,
+                    highlight: false,
+                })
+            }
+            board.push(row);
+        }
+
         this.state = {
             gameState: 1,
-            board: [],
+            player: {
+                board,
+            }
         }
     }
 
@@ -98,11 +107,17 @@ class Game extends React.Component {
     }
 
     hoverPlane(x, y) { 
-        console.log(`enter = (${x}, ${y})`)
+        console.log(`enter = (${x}, ${y})`);
+        const state = this.state;
+        state.player.board[x][y].highlight = true;
+        this.setState(state)
     }
 
     removeHoverPlane(x, y) { 
         console.log(`exit = (${x}, ${y})`)
+        const state = this.state;
+        state.player.board[x][y].highlight = false;
+        this.setState(state)
     }
 
     render() {
@@ -112,19 +127,18 @@ class Game extends React.Component {
         if (this.state.gameState === 1) {
             status = `Place aeroplanes`
             clickAction = this.placePlane
-            enterSquare = this.hoverPlane
-            leaveSquare = this.removeHoverPlane
+            enterSquare = (x, y) => this.hoverPlane(x, y)
+            leaveSquare = (x, y) => this.removeHoverPlane(x, y)
         }
 
         return (
             <div className="game">
                 <div className="game-board">
                     <Board
-                        rowCount={10}
-                        squareCount={10}
                         clickAction={clickAction}
                         enterSquare={enterSquare}
                         leaveSquare={leaveSquare}
+                        board={this.state.player.board}
                     />
                 </div>
                 <div className="game-info">
@@ -138,4 +152,4 @@ class Game extends React.Component {
 // ========================================
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<Game />);
+root.render(<Game rowCount={10} squareCount={10} />);
